@@ -41,12 +41,22 @@ export function remessasSeed(hoje: ISODate): Remessa[] {
       item('p21', 'P', 'Jeans claro', 6, 2, 4),
     ]),
 
+    // Fechada há poucos dias (AC-005): dá o giro de "vendidas em 30 dias" dos cards do Estoque
+    remessa('RM-0145', 'v6', dia(-28), [
+      item('p01', 'M', 'Floral', 13, 2, 11),
+      item('p08', 'M', 'Branco', 20, 2, 18),
+      item('p16', 'M', 'Jeans claro', 16, 2, 14),
+      item('p20', 'P', 'Preto', 10, 1, 9),
+      item('p25', 'M', 'Bege', 6, 1, 5),
+      item('p26', 'P', 'Off-white', 2, 0, 2),
+    ]),
+
     // Abertas: na rua (as do Painel no Figma)
     remessa('RM-0142', 'v1', dia(-37), [
       item('p01', 'M', 'Floral', 3),
       item('p01', 'G', 'Floral', 3),
       item('p08', 'P', 'Branco', 6),
-      item('p08', 'M', 'Preto', 6),
+      item('p20', 'G', 'Preto', 6),
       item('p12', 'M', 'Preto', 5),
       item('p15', 'M', 'Preto', 4),
       item('p20', 'M', 'Preto', 3),
@@ -55,10 +65,10 @@ export function remessasSeed(hoje: ISODate): Remessa[] {
     remessa('RM-0147', 'v2', dia(-30), [
       item('p02', 'M', 'Preto', 4),
       item('p05', 'M', 'Estampado', 3),
-      item('p11', 'P', 'Bege', 4),
+      item('p16', 'G', 'Jeans claro', 4),
       item('p16', 'M', 'Jeans claro', 3),
       item('p21', 'M', 'Jeans claro', 4),
-      item('p13', 'P', 'Vinho', 4),
+      item('p25', 'M', 'Bege', 4),
     ]),
     // Parcial: já teve um acerto (AC-004)
     remessa('RM-0149', 'v3', dia(-25), [
@@ -71,20 +81,22 @@ export function remessasSeed(hoje: ISODate): Remessa[] {
     ]),
     remessa('RM-0151', 'v4', dia(-16), [
       item('p03', 'M', 'Areia', 3),
-      item('p10', 'P', 'Off-white', 4),
+      item('p26', 'M', 'Off-white', 4),
       item('p17', 'M', 'Cáqui', 3),
-      item('p22', 'P', 'Estampado', 3),
+      item('p20', 'P', 'Preto', 3),
       item('p06', 'M', 'Branco', 4),
     ]),
     remessa('RM-0153', 'v5', dia(-13), [
       item('p01', 'P', 'Floral', 2),
       item('p02', 'P', 'Caramelo', 4),
-      item('p08', 'G', 'Branco', 6),
+      item('p08', 'G', 'Branco', 5),
       item('p12', 'P', 'Nude', 5),
       item('p14', 'P', 'Branco', 10),
       item('p15', 'G', 'Bege', 4),
-      item('p19', 'M', 'Jeans escuro', 5),
-      item('p23', 'M', 'Preto', 4),
+      item('p16', 'P', 'Jeans claro', 2),
+      item('p19', 'M', 'Jeans escuro', 3),
+      item('p25', 'P', 'Bege', 2),
+      item('p23', 'M', 'Preto', 3),
       item('p11', 'M', 'Preto', 4),
     ]),
   ]

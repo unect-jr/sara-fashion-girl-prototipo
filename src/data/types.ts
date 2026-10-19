@@ -2,7 +2,7 @@ import type { ISODate } from '../lib/date'
 
 export type { ISODate }
 
-export type Categoria = 'vestido' | 'blusa' | 'calca' | 'saia'
+export type Categoria = 'vestido' | 'blusa' | 'calca' | 'saia' | 'conjunto'
 export type Tamanho = 'PP' | 'P' | 'M' | 'G' | 'GG'
 
 // Identifica uma variação dentro do produto
@@ -17,8 +17,12 @@ export interface Variacao extends VariacaoRef {
 
 export interface Produto {
   id: string
+  // Código exibido no card (ex.: VST-0312)
+  sku: string
   nome: string
   categoria: Categoria
+  // Caminho em public/ (ex.: /produtos/vestido-midi-floral.jpg); sem imagem usa placeholder
+  imagem?: string
   preco: number
   // Custo unitário: o Painel mostra o estoque central "em custo"
   custo: number

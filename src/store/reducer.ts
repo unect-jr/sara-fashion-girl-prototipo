@@ -101,7 +101,8 @@ export function appReducer(state: AppState, action: Action): AppState {
     }
     case 'novoProduto':
       if (state.produtos.some((produto) => produto.id === action.produto.id)) return state
-      return { ...state, produtos: [...state.produtos, action.produto] }
+      // Produto novo entra no topo da grade do Estoque
+      return { ...state, produtos: [action.produto, ...state.produtos] }
     case 'criarRemessa':
       return criarRemessa(state, action.remessa)
     case 'registrarAcerto':

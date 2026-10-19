@@ -24,7 +24,11 @@
   --color-brand: #c3114a;
   --color-brand-tint: #fcf3f6;
   --color-warning: #9a6200;
+  --color-warning-tint: #fbf5e9;
   --color-info: #1f4e8c;
+  --color-info-tint: #eef3fa;
+  /* Fundo do modal (sem valor no Figma: derivado do ink) */
+  --color-overlay: rgb(26 26 24 / 0.45);
 
   /* Fontes */
   --font-sans: "Barlow", ui-sans-serif, system-ui, sans-serif;
@@ -63,9 +67,19 @@
   --text-eyebrow: 0.625rem;
   --text-eyebrow--line-height: 12px;
   --text-eyebrow--letter-spacing: 0.11em;
+  /* Rótulos de campo e etiquetas (Figma 24:292, 13:64) */
+  --text-label: 0.59375rem;
+  --text-label--line-height: 12px;
+  --text-label--letter-spacing: 0.1em;
 
   /* Raios (pílulas usam rounded-full) */
   --radius-card: 20px;
+  --radius-modal: 24px;
+  --radius-tile: 14px;
+
+  /* Sombras e larguras (Figma 24:227) */
+  --shadow-modal: 0 18px 48px -8px rgb(18 18 15 / 0.22);
+  --container-modal: 620px;
 
   /* Espaçamentos de layout */
   --spacing-rail: 240px;

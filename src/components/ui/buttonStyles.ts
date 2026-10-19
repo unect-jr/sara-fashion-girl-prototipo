@@ -1,5 +1,5 @@
 export type ButtonVariant = 'primary' | 'secondary' | 'warning'
-export type ButtonSize = 'md' | 'sm'
+export type ButtonSize = 'md' | 'sm' | 'xs'
 
 interface ButtonStyleOptions {
   variant?: ButtonVariant
@@ -16,10 +16,11 @@ const VARIANTS: Record<ButtonVariant, string> = {
   warning: 'border-warning bg-surface text-warning hover:bg-warning/5',
 }
 
-// md: ações do topo (12.5px); sm: ação de linha "Fazer acerto" (12px)
+// md: ações do topo (12.5px); sm: ação de linha "Fazer acerto" (12px); xs: topo do Estoque (Figma 13:32)
 const SIZES: Record<ButtonSize, string> = {
   md: 'px-4 py-2.25 text-button',
   sm: 'px-4 py-2 text-button-sm',
+  xs: 'px-4 py-1.5 text-button leading-4',
 }
 
 // Compartilhado com links que precisam parecer pílula (ex.: <Link> do router)

@@ -15,6 +15,7 @@ const ACERTOS: AcertoSeed[] = [
   { id: 'AC-003', remessaId: 'RM-0139', diasAtras: 33, formaPagamento: 'pix' },
   // Acerto parcial da RM-0149, que segue aberta
   { id: 'AC-004', remessaId: 'RM-0149', diasAtras: 8, formaPagamento: 'pix' },
+  { id: 'AC-005', remessaId: 'RM-0145', diasAtras: 5, formaPagamento: 'pix' },
 ]
 
 // Valores calculados a partir das vendidas de cada remessa, para bater com o resto do seed
