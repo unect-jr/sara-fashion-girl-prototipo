@@ -1,5 +1,6 @@
 import { Link } from 'react-router'
 import PageHeader from '../components/PageHeader'
+import { buttonClasses } from '../components/ui/buttonStyles'
 import Card from '../components/ui/Card'
 import EmptyState from '../components/ui/EmptyState'
 
@@ -12,7 +13,7 @@ export default function NaoEncontrada() {
           title="Este endereço não existe"
           description="Confira o link ou volte para o Painel."
           action={
-            <Link to="/" className="text-button font-medium text-info hover:underline">
+            <Link to="/" className={buttonClasses({ variant: 'primary' })}>
               Ir para o Painel
             </Link>
           }
