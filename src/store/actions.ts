@@ -1,4 +1,4 @@
-import type { FormaPagamento, ISODate, Produto, VariacaoRef } from '../data/types'
+import type { FormaPagamento, ISODate, Produto, VariacaoRef, Vendedora } from '../data/types'
 
 export interface EntradaItem extends VariacaoRef {
   quantidade: number
@@ -33,6 +33,7 @@ export interface NovoAcerto {
 export type Action =
   | { type: 'entradaMercadoria'; produtoId: string; itens: EntradaItem[] }
   | { type: 'novoProduto'; produto: Produto }
+  | { type: 'novaVendedora'; vendedora: Vendedora }
   | { type: 'criarRemessa'; remessa: NovaRemessa }
   | { type: 'registrarAcerto'; acerto: NovoAcerto }
   | { type: 'marcarParcelaPaga'; crediarioId: string; numero: number }

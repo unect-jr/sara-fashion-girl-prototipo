@@ -17,6 +17,8 @@ import Select from '../ui/Select'
 
 interface ModalNovaRemessaProps {
   open: boolean
+  // Já abre com a vendedora escolhida (tela de Vendedoras)
+  vendedoraInicialId?: string
   onClose: () => void
   onSuccess: (mensagem: string) => void
 }
@@ -40,15 +42,15 @@ interface Linha {
 const PRAZO_PADRAO_DIAS = 30
 const LATENCIA_MS = 600
 
-export default function ModalNovaRemessa({ open, onClose, onSuccess }: ModalNovaRemessaProps) {
+export default function ModalNovaRemessa({ open, vendedoraInicialId, onClose, onSuccess }: ModalNovaRemessaProps) {
   return (
     <Modal open={open} onClose={onClose} title="Nova remessa" subtitle="As peças saem do central e vão para a vendedora">
-      <RemessaForm onClose={onClose} onSuccess={onSuccess} />
+      <RemessaForm vendedoraInicialId={vendedoraInicialId} onClose={onClose} onSuccess={onSuccess} />
     </Modal>
   )
 }
 
-function RemessaForm({ onClose, onSuccess }: Omit<ModalNovaRemessaProps, 'open'>) {
+function RemessaForm({ vendedoraInicialId, onClose, onSuccess }: Omit<ModalNovaRemessaProps, 'open'>) {
   const { state, dispatch } = useAppStore()
   const vendedoras = state.vendedoras.filter((v) => v.ativa)
 
@@ -71,7 +73,7 @@ function RemessaForm({ onClose, onSuccess }: Omit<ModalNovaRemessaProps, 'open'>
     [state.produtos],
   )
 
-  const [vendedoraId, setVendedoraId] = useState(vendedoras[0]?.id ?? '')
+  const [vendedoraId, setVendedoraId] = useState(vendedoraInicialId ?? vendedoras[0]?.id ?? '')
   const [prazo, setPrazo] = useState(addDays(state.hoje, PRAZO_PADRAO_DIAS))
   const [linhas, setLinhas] = useState<Linha[]>(() => (opcoes[0] ? [{ key: 1, chave: opcoes[0].chave, quantidade: 1 }] : []))
   const [erro, setErro] = useState<string>()

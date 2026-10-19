@@ -44,6 +44,10 @@
   --text-heading: 1.0625rem;
   --text-heading--line-height: 21px;
   --text-heading--letter-spacing: -0.01em;
+  /* Nome e valores do card de vendedora (Figma 16:63, 16:77) */
+  --text-title: 1rem;
+  --text-title--line-height: 20px;
+  --text-title--letter-spacing: -0.01em;
   --text-wordmark: 0.9375rem;
   --text-wordmark--line-height: 18px;
   --text-wordmark--letter-spacing: 0.2em;

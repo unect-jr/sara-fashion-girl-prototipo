@@ -25,6 +25,13 @@ export function formatDateLong(iso: ISODate): string {
   return longDate.format(parseISODate(iso))
 }
 
+const monthName = new Intl.DateTimeFormat('pt-BR', { month: 'long' })
+
+// setembro
+export function formatMonth(iso: ISODate): string {
+  return monthName.format(parseISODate(iso))
+}
+
 // 12/08
 export function formatDateShort(iso: ISODate): string {
   return shortDate.format(parseISODate(iso))

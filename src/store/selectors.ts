@@ -1,5 +1,16 @@
 import { SKU_PREFIXO } from '../data/catalogo'
-import type { AppState, Categoria, Crediario, Parcela, Produto, Remessa, Tamanho, VariacaoRef } from '../data/types'
+import type {
+  Acerto,
+  AppState,
+  Categoria,
+  Crediario,
+  Parcela,
+  Produto,
+  Remessa,
+  Tamanho,
+  VariacaoRef,
+  Vendedora,
+} from '../data/types'
 import { addDays } from '../lib/date'
 import { pendentes, sameVariacao } from '../lib/remessa'
 import { getStatusPrazo, type StatusPrazo } from '../lib/status'
@@ -181,6 +192,54 @@ export function resumoEstoque(state: AppState): ResumoProduto[] {
       estoqueBaixo: tamanhos.some((tamanho) => porTamanho[tamanho] <= LIMITE_ESTOQUE_BAIXO),
     }
   })
+}
+
+export interface ResumoVendedora {
+  vendedora: Vendedora
+  // Remessa aberta de prazo mais próximo (a que define o traço do card)
+  remessa?: Remessa
+  status?: StatusPrazo
+  ultimoAcerto?: Acerto
+  emPoder: number
+  valorEmPoder: number
+  vendidoMes: VendidoNoMes
+}
+
+// Totais por vendedora para a grade de Vendedoras (Figma 16:57)
+export function resumoVendedoras(state: AppState): ResumoVendedora[] {
+  const mes = state.hoje.slice(0, 7)
+  return state.vendedoras
+    .filter((vendedora) => vendedora.ativa)
+    .map((vendedora) => {
+      const daVendedora = state.remessas.filter((remessa) => remessa.vendedoraId === vendedora.id)
+      const abertas = remessasAbertas(daVendedora).toSorted((a, b) => a.prazoAcerto.localeCompare(b.prazoAcerto))
+      const ids = new Set(daVendedora.map((remessa) => remessa.id))
+      const acertos = state.acertos.filter((acerto) => ids.has(acerto.remessaId))
+      const doMes = acertos.filter((acerto) => acerto.data.startsWith(mes))
+      const remessasDoMes = new Set(doMes.map((acerto) => acerto.remessaId))
+
+      return {
+        vendedora,
+        remessa: abertas[0],
+        status: abertas[0] && getStatusPrazo(abertas[0].prazoAcerto, state.hoje),
+        ultimoAcerto: acertos.toSorted((a, b) => b.data.localeCompare(a.data))[0],
+        emPoder: abertas.reduce((total, remessa) => total + pecasNaRemessa(remessa), 0),
+        valorEmPoder: abertas.reduce((total, remessa) => total + valorConsignado(remessa, state.produtos), 0),
+        vendidoMes: {
+          pecas: daVendedora
+            .filter((remessa) => remessasDoMes.has(remessa.id))
+            .reduce((total, remessa) => total + remessa.itens.reduce((soma, item) => soma + item.vendida, 0), 0),
+          valorBruto: doMes.reduce((total, acerto) => total + acerto.valorBruto, 0),
+          comissao: doMes.reduce((total, acerto) => total + acerto.comissao, 0),
+        },
+      }
+    })
+}
+
+// v6 → v7
+export function proximoIdVendedora(vendedoras: Vendedora[]): string {
+  const maior = vendedoras.reduce((max, vendedora) => Math.max(max, Number(vendedora.id.slice(1)) || 0), 0)
+  return `v${maior + 1}`
 }
 
 // VST-0312 → próximo número livre da categoria (VST-0313)
