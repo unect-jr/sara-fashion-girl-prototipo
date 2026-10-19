@@ -96,6 +96,26 @@ export function saldoEmAtraso(crediarios: Crediario[], hoje: AppState['hoje']): 
   )
 }
 
+export interface VendidoNoMes {
+  pecas: number
+  valorBruto: number
+  comissao: number
+}
+
+// Acertos registrados no mês de "hoje" (tira de medidas do Painel)
+export function vendidoNoMes(state: AppState): VendidoNoMes {
+  const mes = state.hoje.slice(0, 7)
+  const doMes = state.acertos.filter((acerto) => acerto.data.startsWith(mes))
+  const remessaIds = new Set(doMes.map((acerto) => acerto.remessaId))
+  return {
+    pecas: state.remessas
+      .filter((remessa) => remessaIds.has(remessa.id))
+      .reduce((total, remessa) => total + remessa.itens.reduce((soma, item) => soma + item.vendida, 0), 0),
+    valorBruto: doMes.reduce((total, acerto) => total + acerto.valorBruto, 0),
+    comissao: doMes.reduce((total, acerto) => total + acerto.comissao, 0),
+  }
+}
+
 export interface VariacaoBaixa extends VariacaoRef {
   produto: Produto
   quantidadeCentral: number
