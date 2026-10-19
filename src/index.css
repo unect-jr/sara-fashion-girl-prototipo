@@ -1,1 +1,83 @@
 @import "tailwindcss";
+
+/* Tokens extraídos do Figma (frame 9:2 — Painel). O arquivo não tem Variables; valores brutos do frame. */
+@theme {
+  /* Cores — superfícies */
+  --color-canvas: #f4f4f1;
+  --color-rail: #edede8;
+  --color-rail-line: #dcdcd4;
+  --color-surface: #ffffff;
+  --color-surface-muted: #fafaf8;
+
+  /* Cores — linhas */
+  --color-line: #e2e2dc;
+  --color-line-strong: #d5d5ce;
+  --color-track: #cfcfc7;
+
+  /* Cores — texto */
+  --color-ink: #1a1a18;
+  --color-ink-soft: #2a2a28;
+  --color-ink-detail: #52524c;
+  --color-muted: #6e6e67;
+
+  /* Cores — marca e estados */
+  --color-brand: #c3114a;
+  --color-brand-tint: #fcf3f6;
+  --color-warning: #9a6200;
+  --color-info: #1f4e8c;
+
+  /* Fontes */
+  --font-sans: "Barlow", ui-sans-serif, system-ui, sans-serif;
+  --font-label: "Barlow Semi Condensed", "Barlow", ui-sans-serif, sans-serif;
+
+  /* Escala tipográfica */
+  --text-display: 1.625rem;
+  --text-display--line-height: 31px;
+  --text-display--letter-spacing: -0.02em;
+  --text-metric: 1.1875rem;
+  --text-metric--line-height: 23px;
+  --text-metric--letter-spacing: -0.01em;
+  --text-heading: 1.0625rem;
+  --text-heading--line-height: 21px;
+  --text-heading--letter-spacing: -0.01em;
+  --text-brand: 0.9375rem;
+  --text-brand--line-height: 18px;
+  --text-brand--letter-spacing: 0.2em;
+  --text-row: 0.875rem;
+  --text-row--line-height: 17px;
+  --text-body: 0.84375rem;
+  --text-body--line-height: 17px;
+  --text-sub: 0.8125rem;
+  --text-sub--line-height: 17px;
+  --text-button: 0.78125rem;
+  --text-button--line-height: 15px;
+  --text-button-sm: 0.75rem;
+  --text-button-sm--line-height: 14px;
+  --text-caption: 0.71875rem;
+  --text-caption--line-height: 15px;
+  --text-micro: 0.6875rem;
+  --text-micro--line-height: 13px;
+  --text-tagline: 0.65625rem;
+  --text-tagline--line-height: 13px;
+  --text-tagline--letter-spacing: 0.26em;
+  --text-eyebrow: 0.625rem;
+  --text-eyebrow--line-height: 12px;
+  --text-eyebrow--letter-spacing: 0.11em;
+
+  /* Raios (pílulas usam rounded-full) */
+  --radius-card: 20px;
+
+  /* Espaçamentos de layout */
+  --spacing-rail: 240px;
+  --spacing-card-x: 28px;
+  --spacing-page-x: 40px;
+}
+
+@layer base {
+  body {
+    background-color: var(--color-canvas);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
