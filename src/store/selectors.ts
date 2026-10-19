@@ -236,6 +236,73 @@ export function resumoVendedoras(state: AppState): ResumoVendedora[] {
     })
 }
 
+export interface ResumoRemessa {
+  remessa: Remessa
+  vendedora?: Vendedora
+  aberta: boolean
+  // Só nas abertas
+  status?: StatusPrazo
+  // Abertas: o que ainda está na rua; fechadas: o que foi enviado
+  pecas: number
+  valor: number
+  vendidas: number
+  devolvidas: number
+  ultimoAcerto?: Acerto
+}
+
+// Linhas da tela de Remessas (Figma 17:57): abertas pelo prazo, depois as acertadas mais recentes
+export function resumoRemessas(state: AppState): ResumoRemessa[] {
+  const resumos = state.remessas.map((remessa): ResumoRemessa => {
+    const aberta = remessa.status !== 'fechada'
+    const enviadas = remessa.itens.reduce((total, item) => total + item.enviada, 0)
+    const valorEnviado = remessa.itens.reduce(
+      (total, item) => total + item.enviada * (getProduto(state.produtos, item.produtoId)?.preco ?? 0),
+      0,
+    )
+    return {
+      remessa,
+      vendedora: state.vendedoras.find((vendedora) => vendedora.id === remessa.vendedoraId),
+      aberta,
+      status: aberta ? getStatusPrazo(remessa.prazoAcerto, state.hoje) : undefined,
+      pecas: aberta ? pecasNaRemessa(remessa) : enviadas,
+      valor: aberta ? valorConsignado(remessa, state.produtos) : valorEnviado,
+      vendidas: remessa.itens.reduce((total, item) => total + item.vendida, 0),
+      devolvidas: remessa.itens.reduce((total, item) => total + item.devolvida, 0),
+      ultimoAcerto: state.acertos
+        .filter((acerto) => acerto.remessaId === remessa.id)
+        .toSorted((a, b) => b.data.localeCompare(a.data))[0],
+    }
+  })
+  return [
+    ...resumos.filter((r) => r.aberta).toSorted((a, b) => a.remessa.prazoAcerto.localeCompare(b.remessa.prazoAcerto)),
+    ...resumos
+      .filter((r) => !r.aberta)
+      .toSorted((a, b) => (b.ultimoAcerto?.data ?? b.remessa.dataSaida).localeCompare(a.ultimoAcerto?.data ?? a.remessa.dataSaida)),
+  ]
+}
+
+export interface ItemRomaneio {
+  produto: Produto
+  grade: Record<Tamanho, number>
+  quantidade: number
+  subtotal: number
+}
+
+// Itens do romaneio agrupados por produto, com a grade enviada (Figma 17:83)
+export function itensRomaneio(remessa: Remessa, produtos: Produto[]): ItemRomaneio[] {
+  const porProduto = new Map<string, ItemRomaneio>()
+  for (const item of remessa.itens) {
+    const produto = getProduto(produtos, item.produtoId)
+    if (!produto) continue
+    const atual = porProduto.get(produto.id) ?? { produto, grade: { PP: 0, P: 0, M: 0, G: 0, GG: 0 }, quantidade: 0, subtotal: 0 }
+    atual.grade[item.tamanho] += item.enviada
+    atual.quantidade += item.enviada
+    atual.subtotal += item.enviada * produto.preco
+    porProduto.set(produto.id, atual)
+  }
+  return [...porProduto.values()]
+}
+
 // v6 → v7
 export function proximoIdVendedora(vendedoras: Vendedora[]): string {
   const maior = vendedoras.reduce((max, vendedora) => Math.max(max, Number(vendedora.id.slice(1)) || 0), 0)

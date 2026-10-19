@@ -32,6 +32,14 @@ export function formatMonth(iso: ISODate): string {
   return monthName.format(parseISODate(iso))
 }
 
+const monthYear = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' })
+
+// "2026-09" → Setembro de 2026
+export function formatMonthYear(mes: string): string {
+  const texto = monthYear.format(parseISODate(`${mes}-01`))
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
+}
+
 // 12/08
 export function formatDateShort(iso: ISODate): string {
   return shortDate.format(parseISODate(iso))

@@ -1,9 +1,8 @@
 import { Link } from 'react-router'
 import { formatCurrency, formatMonth, formatNumber, formatPecas } from '../../lib/format'
-import type { StatusPrazo } from '../../lib/status'
 import type { ResumoVendedora } from '../../store/selectors'
+import { VARIANTE_ACERTO } from '../prazoStyles'
 import Button from '../ui/Button'
-import type { ButtonVariant } from '../ui/buttonStyles'
 import Medida from './Medida'
 import PrazoTraco from './PrazoTraco'
 import VendedoraAvatar from './VendedoraAvatar'
@@ -13,13 +12,6 @@ interface VendedoraCardProps {
   hoje: string
   onFazerAcerto: (remessaId: string) => void
   onNovaRemessa: (vendedoraId: string) => void
-}
-
-// "Fazer acerto" segue a urgência do prazo (Figma 16:88, 16:119, 16:150)
-const VARIANTE_ACERTO: Record<StatusPrazo, ButtonVariant> = {
-  atrasado: 'primary',
-  'vence-hoje': 'warning',
-  'em-dia': 'secondary',
 }
 
 // Card de vendedora (Figma 16:59); o card todo leva ao detalhe
