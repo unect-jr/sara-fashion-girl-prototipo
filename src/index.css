@@ -40,9 +40,9 @@
   --text-heading: 1.0625rem;
   --text-heading--line-height: 21px;
   --text-heading--letter-spacing: -0.01em;
-  --text-brand: 0.9375rem;
-  --text-brand--line-height: 18px;
-  --text-brand--letter-spacing: 0.2em;
+  --text-wordmark: 0.9375rem;
+  --text-wordmark--line-height: 18px;
+  --text-wordmark--letter-spacing: 0.2em;
   --text-row: 0.875rem;
   --text-row--line-height: 17px;
   --text-body: 0.84375rem;
