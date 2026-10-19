@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { todayISO } from '../lib/date'
 import { formatDateLong } from '../lib/format'
+import { useAppStore } from '../store/useAppStore'
 
 interface PageHeaderProps {
   title: string
@@ -9,7 +9,7 @@ interface PageHeaderProps {
 
 // Topo das páginas: título + data de hoje por extenso (Figma 9:28)
 export default function PageHeader({ title, actions }: PageHeaderProps) {
-  const hoje = todayISO()
+  const { hoje } = useAppStore().state
 
   return (
     <header className="flex items-center justify-between gap-4">

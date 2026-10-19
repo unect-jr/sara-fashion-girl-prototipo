@@ -27,7 +27,7 @@ O protótipo deve deixar essas respostas visíveis em segundos no **Painel**.
 - **Remessa**: envio de um conjunto de peças a uma vendedora, com data de saída e prazo de acerto.
 - **Vendedora**: revendedora que recebe remessas em consignação e vende.
 - **Acerto**: fechamento de uma remessa. A vendedora devolve as não vendidas e paga as vendidas, descontada a comissão.
-- **Comissão**: percentual que fica com a vendedora sobre o valor vendido **[CONFIRMAR]** (usar 30% no mock).
+- **Comissão**: percentual que fica com a vendedora sobre o valor vendido **[CONFIRMAR]** (usar 25% no mock, como no Painel do Figma).
 - **Crediário**: venda parcelada ao cliente final, com parcelas e vencimentos.
 - **Na rua**: peças que estão com vendedoras (remessas abertas).
 
