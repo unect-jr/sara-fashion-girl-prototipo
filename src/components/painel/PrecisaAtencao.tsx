@@ -5,6 +5,7 @@ import type { AppState } from '../../data/types'
 import { diffDays } from '../../lib/date'
 import { formatCurrency, formatPecas } from '../../lib/format'
 import { EASE_OUT } from '../../lib/motion'
+import { lembretesDoDia } from '../../store/consultas'
 import { pecasNaRemessa, remessasAbertas, resumoEstoque, valorConsignado } from '../../store/selectors'
 import { useAppStore } from '../../store/useAppStore'
 import Card from '../ui/Card'
@@ -63,6 +64,29 @@ function montarAlertas(state: AppState, onRepor: (produtoId: string) => void): A
     })
   }
 
+  // Lembretes de vencimento configurados no Crediário (HU 4.3)
+  const lembretes = lembretesDoDia(state)
+  if (lembretes.length > 0) {
+    const contar = (tipo: string) => lembretes.filter((l) => l.tipo === tipo).length
+    const partes = [
+      contar('antes') > 0 && `${contar('antes')} ${contar('antes') === 1 ? 'vence' : 'vencem'} em até ${state.lembretes.diasAntes} dias`,
+      contar('no-dia') > 0 && `${contar('no-dia')} ${contar('no-dia') === 1 ? 'vence' : 'vencem'} hoje`,
+      contar('depois') > 0 && `${contar('depois')} ${contar('depois') === 1 ? 'vencida' : 'vencidas'}`,
+    ].filter(Boolean)
+    alertas.push({
+      id: 'lembretes',
+      tom: contar('depois') > 0 ? 'atrasado' : 'aviso',
+      titulo: `${lembretes.length} ${lembretes.length === 1 ? 'cobrança para lembrar' : 'cobranças para lembrar'} hoje`,
+      detalhe: partes.join(' · '),
+      valor: lembretes.reduce((total, l) => total + l.linha.parcela.valor, 0),
+      acao: (
+        <Link to="/crediario" className={LINK}>
+          Ver lembretes
+        </Link>
+      ),
+    })
+  }
+
   // Peças paradas na rua há mais de 30 dias
   const paradas = remessasAbertas(state.remessas).filter((remessa) => diffDays(state.hoje, remessa.dataSaida) > RUA_DIAS)
   const pecasParadas = paradas.reduce((total, remessa) => total + pecasNaRemessa(remessa), 0)
@@ -99,7 +123,7 @@ function montarAlertas(state: AppState, onRepor: (produtoId: string) => void): A
     alertas.push({
       id: 'repor',
       tom: 'info',
-      titulo: `${resumo.produto.nome} — ${lista.format(tamanhos)} ${tamanhos.length === 1 ? 'zerado' : 'zerados'} no central`,
+      titulo: `${resumo.produto.nome}: ${lista.format(tamanhos)} ${tamanhos.length === 1 ? 'zerado' : 'zerados'} no central`,
       detalhe: `${resumo.naRua} na rua${outros > 0 ? ` · mais ${outros} ${outros === 1 ? 'modelo' : 'modelos'} para repor` : ''}`,
       acao: (
         <button type="button" onClick={() => onRepor(resumo.produto.id)} className={LINK}>
@@ -138,7 +162,7 @@ export default function PrecisaAtencao({ onRepor }: PrecisaAtencaoProps) {
               <p
                 className={`hidden w-30 shrink-0 text-right text-body font-semibold tabular-nums sm:block ${alerta.valor === undefined ? 'text-muted' : 'text-ink'}`}
               >
-                {alerta.valor === undefined ? '—' : formatCurrency(alerta.valor)}
+                {alerta.valor === undefined ? '' : formatCurrency(alerta.valor)}
               </p>
               <div className="flex w-29 shrink-0 justify-end">{alerta.acao}</div>
             </motion.li>

@@ -7,6 +7,7 @@ import type { Produto } from '../../data/types'
 import { formatCurrency, formatPecas } from '../../lib/format'
 import { descreverGrade, gradeVazia, totalGrade, type Grade } from '../../lib/grade'
 import { EASE_OUT } from '../../lib/motion'
+import { useCarimbo } from '../../auth/useCarimbo'
 import { getProduto } from '../../store/selectors'
 import { useAppStore } from '../../store/useAppStore'
 import Button from '../ui/Button'
@@ -56,7 +57,9 @@ export default function ModalEntradaMercadoria({ open, onClose, produtoInicialId
 // Montado a cada abertura do modal: o estado do formulário começa limpo
 function EntradaForm({ onClose, produtoInicialId, onSuccess }: Omit<ModalEntradaMercadoriaProps, 'open'>) {
   const { state, dispatch } = useAppStore()
-  const produtoPadrao = produtoInicialId ?? state.produtos[0]?.id ?? ''
+  const carimbar = useCarimbo()
+  const ativos = state.produtos.filter((produto) => !produto.inativo || produto.id === produtoInicialId)
+  const produtoPadrao = produtoInicialId ?? ativos[0]?.id ?? ''
 
   const [fornecedor, setFornecedor] = useState(FORNECEDORES[0])
   const [notaFiscal, setNotaFiscal] = useState('')
@@ -123,9 +126,14 @@ function EntradaForm({ onClose, produtoInicialId, onSuccess }: Omit<ModalEntrada
 
     setSalvando(true)
     window.setTimeout(() => {
+      const carimbo = carimbar()
       for (const peca of todas) {
         dispatch({
           type: 'entradaMercadoria',
+          notaFiscal: notaFiscal.trim(),
+          fornecedor,
+          data,
+          carimbo,
           produtoId: peca.produtoId,
           itens: TAMANHOS_GRADE.filter((tamanho) => peca.grade[tamanho] > 0).map((tamanho) => ({
             tamanho,
@@ -240,7 +248,7 @@ function EntradaForm({ onClose, produtoInicialId, onSuccess }: Omit<ModalEntrada
             <div className="flex flex-col gap-3 sm:flex-row">
               <Field label="Peça" htmlFor="entrada-produto" className="flex-1">
                 <Select id="entrada-produto" value={editorProduto} onChange={(event) => trocarProdutoEditor(event.target.value)}>
-                  {state.produtos.map((produto) => (
+                  {ativos.map((produto) => (
                     <option key={produto.id} value={produto.id}>
                       {produto.nome} · {produto.sku}
                     </option>

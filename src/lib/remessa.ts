@@ -4,14 +4,20 @@ export function sameVariacao(a: VariacaoRef, b: VariacaoRef): boolean {
   return a.tamanho === b.tamanho && a.cor === b.cor
 }
 
-// Peças que ainda estão com a vendedora
-export function pendentes(item: ItemRemessa): number {
-  return item.enviada - item.devolvida - item.vendida
+// Vendidas pela vendedora na hora e ainda não acertadas
+export function baixadas(item: ItemRemessa): number {
+  return item.baixada ?? 0
 }
 
+// Peças que ainda estão com a vendedora
+export function pendentes(item: ItemRemessa): number {
+  return item.enviada - item.devolvida - item.vendida - baixadas(item)
+}
+
+// Só fecha quando nada ficou com a vendedora e nada vendido espera acerto
 export function statusRemessa(itens: ItemRemessa[]): StatusRemessa {
-  if (itens.every((item) => pendentes(item) === 0)) return 'fechada'
-  if (itens.some((item) => item.devolvida + item.vendida > 0)) return 'parcial'
+  if (itens.every((item) => pendentes(item) === 0 && baixadas(item) === 0)) return 'fechada'
+  if (itens.some((item) => item.devolvida + item.vendida + baixadas(item) > 0)) return 'parcial'
   return 'aberta'
 }
 

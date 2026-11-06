@@ -7,12 +7,14 @@ import type {
   Parcela,
   Produto,
   Remessa,
+  ItemVenda,
   Tamanho,
   VariacaoRef,
+  Venda,
   Vendedora,
 } from '../data/types'
 import { addDays } from '../lib/date'
-import { pendentes, sameVariacao } from '../lib/remessa'
+import { pendentes, roundCents, sameVariacao } from '../lib/remessa'
 import { getStatusPrazo, type StatusPrazo } from '../lib/status'
 
 // Alerta de estoque baixo: ≤ 3 unidades no central (docs/produto.md §5)
@@ -113,18 +115,34 @@ export interface VendidoNoMes {
   comissao: number
 }
 
-// Acertos registrados no mês de "hoje" (tira de medidas do Painel)
-export function vendidoNoMes(state: AppState): VendidoNoMes {
+// Itens de vendas ativas que ainda não passaram por acerto (venda e baixa da vendedora)
+export function itensSemAcerto(state: AppState): { venda: Venda; item: ItemVenda }[] {
+  return state.vendas
+    .filter((venda) => !venda.cancelamento)
+    .flatMap((venda) => venda.itens.filter((item) => !item.acertoId).map((item) => ({ venda, item })))
+}
+
+// Vendido no mês de "hoje": acertos do mês + vendas registradas e ainda não acertadas
+export function vendidoNoMes(state: AppState, vendedoraId?: string): VendidoNoMes {
   const mes = state.hoje.slice(0, 7)
-  const doMes = state.acertos.filter((acerto) => acerto.data.startsWith(mes))
+  const remessas = state.remessas.filter((remessa) => !vendedoraId || remessa.vendedoraId === vendedoraId)
+  const ids = new Set(remessas.map((remessa) => remessa.id))
+  const doMes = state.acertos.filter((acerto) => ids.has(acerto.remessaId) && acerto.data.startsWith(mes))
   const remessaIds = new Set(doMes.map((acerto) => acerto.remessaId))
-  return {
-    pecas: state.remessas
-      .filter((remessa) => remessaIds.has(remessa.id))
-      .reduce((total, remessa) => total + remessa.itens.reduce((soma, item) => soma + item.vendida, 0), 0),
-    valorBruto: doMes.reduce((total, acerto) => total + acerto.valorBruto, 0),
-    comissao: doMes.reduce((total, acerto) => total + acerto.comissao, 0),
+  let pecas = remessas
+    .filter((remessa) => remessaIds.has(remessa.id))
+    .reduce((total, remessa) => total + remessa.itens.reduce((soma, item) => soma + item.vendida, 0), 0)
+  let valorBruto = doMes.reduce((total, acerto) => total + acerto.valorBruto, 0)
+  let comissao = doMes.reduce((total, acerto) => total + acerto.comissao, 0)
+
+  for (const { venda, item } of itensSemAcerto(state)) {
+    if (!venda.data.startsWith(mes) || (vendedoraId && venda.vendedoraId !== vendedoraId)) continue
+    const taxa = state.vendedoras.find((vendedora) => vendedora.id === venda.vendedoraId)?.comissao ?? 0
+    pecas += item.quantidade
+    valorBruto += item.quantidade * item.preco
+    comissao += item.quantidade * item.preco * taxa
   }
+  return { pecas, valorBruto: roundCents(valorBruto), comissao: roundCents(comissao) }
 }
 
 export interface VariacaoBaixa extends VariacaoRef {
@@ -170,6 +188,10 @@ export function resumoEstoque(state: AppState): ResumoProduto[] {
     if (!remessasComGiro.has(remessa.id)) continue
     for (const item of remessa.itens) vendidas.set(item.produtoId, (vendidas.get(item.produtoId) ?? 0) + item.vendida)
   }
+  // Mais o que as vendedoras já baixaram e ainda não acertaram
+  for (const { venda, item } of itensSemAcerto(state)) {
+    if (venda.data >= inicioJanela) vendidas.set(item.produtoId, (vendidas.get(item.produtoId) ?? 0) + item.quantidade)
+  }
 
   return state.produtos.map((produto) => {
     const porTamanho: Record<Tamanho, number> = { PP: 0, P: 0, M: 0, G: 0, GG: 0 }
@@ -207,7 +229,6 @@ export interface ResumoVendedora {
 
 // Totais por vendedora para a grade de Vendedoras (Figma 16:57)
 export function resumoVendedoras(state: AppState): ResumoVendedora[] {
-  const mes = state.hoje.slice(0, 7)
   return state.vendedoras
     .filter((vendedora) => vendedora.ativa)
     .map((vendedora) => {
@@ -215,8 +236,6 @@ export function resumoVendedoras(state: AppState): ResumoVendedora[] {
       const abertas = remessasAbertas(daVendedora).toSorted((a, b) => a.prazoAcerto.localeCompare(b.prazoAcerto))
       const ids = new Set(daVendedora.map((remessa) => remessa.id))
       const acertos = state.acertos.filter((acerto) => ids.has(acerto.remessaId))
-      const doMes = acertos.filter((acerto) => acerto.data.startsWith(mes))
-      const remessasDoMes = new Set(doMes.map((acerto) => acerto.remessaId))
 
       return {
         vendedora,
@@ -225,13 +244,7 @@ export function resumoVendedoras(state: AppState): ResumoVendedora[] {
         ultimoAcerto: acertos.toSorted((a, b) => b.data.localeCompare(a.data))[0],
         emPoder: abertas.reduce((total, remessa) => total + pecasNaRemessa(remessa), 0),
         valorEmPoder: abertas.reduce((total, remessa) => total + valorConsignado(remessa, state.produtos), 0),
-        vendidoMes: {
-          pecas: daVendedora
-            .filter((remessa) => remessasDoMes.has(remessa.id))
-            .reduce((total, remessa) => total + remessa.itens.reduce((soma, item) => soma + item.vendida, 0), 0),
-          valorBruto: doMes.reduce((total, acerto) => total + acerto.valorBruto, 0),
-          comissao: doMes.reduce((total, acerto) => total + acerto.comissao, 0),
-        },
+        vendidoMes: vendidoNoMes(state, vendedora.id),
       }
     })
 }

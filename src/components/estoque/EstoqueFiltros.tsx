@@ -3,23 +3,27 @@ import lupa from '../../assets/icons/lupa.svg'
 import remover from '../../assets/icons/remover.svg'
 import { CATEGORIA_LABEL, CATEGORIAS, TAMANHOS_GRADE } from '../../data/catalogo'
 import type { Categoria, Tamanho } from '../../data/types'
+import { FiltroAlternar } from '../ui/BarraFiltros'
 import Select from '../ui/Select'
 
 export interface FiltrosEstoque {
   busca: string
   categoria: Categoria | ''
   tamanho: Tamanho | ''
+  cor: string
   somenteBaixo: boolean
+  inativos: boolean
 }
 
 interface EstoqueFiltrosProps {
   filtros: FiltrosEstoque
+  cores: string[]
   onChange: (filtros: FiltrosEstoque) => void
   contagem: string
 }
 
 // Barra de filtros do Estoque (Figma 13:37)
-export default function EstoqueFiltros({ filtros, onChange, contagem }: EstoqueFiltrosProps) {
+export default function EstoqueFiltros({ filtros, cores, onChange, contagem }: EstoqueFiltrosProps) {
   const set = <K extends keyof FiltrosEstoque>(chave: K, valor: FiltrosEstoque[K]) => onChange({ ...filtros, [chave]: valor })
 
   return (
@@ -69,6 +73,15 @@ export default function EstoqueFiltros({ filtros, onChange, contagem }: EstoqueF
         ))}
       </Select>
 
+      <Select size="sm" aria-label="Cor" value={filtros.cor} onChange={(event) => set('cor', event.target.value)} className="w-36">
+        <option value="">Todas as cores</option>
+        {cores.map((cor) => (
+          <option key={cor} value={cor}>
+            {cor}
+          </option>
+        ))}
+      </Select>
+
       {/* Filtro ativo em âmbar (13:51); inativo segue o contorno dos seletores */}
       <motion.button
         type="button"
@@ -84,6 +97,10 @@ export default function EstoqueFiltros({ filtros, onChange, contagem }: EstoqueF
         Estoque baixo
         {filtros.somenteBaixo && <img src={remover} alt="" width={9} height={9} />}
       </motion.button>
+
+      <FiltroAlternar ativo={filtros.inativos} onClick={() => set('inativos', !filtros.inativos)}>
+        Inativos
+      </FiltroAlternar>
 
       <span className="hidden flex-1 xl:block" />
       <p className="ml-auto text-button leading-4 text-muted tabular-nums xl:ml-0">{contagem}</p>
