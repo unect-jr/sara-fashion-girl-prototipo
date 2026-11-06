@@ -6,6 +6,7 @@ import type { Tamanho } from '../../data/types'
 import { addDays } from '../../lib/date'
 import { formatCurrency, formatPecas } from '../../lib/format'
 import { EASE_OUT } from '../../lib/motion'
+import { useCarimbo } from '../../auth/useCarimbo'
 import { proximoIdRemessa } from '../../store/selectors'
 import { useAppStore } from '../../store/useAppStore'
 import Button from '../ui/Button'
@@ -52,24 +53,27 @@ export default function ModalNovaRemessa({ open, vendedoraInicialId, onClose, on
 
 function RemessaForm({ vendedoraInicialId, onClose, onSuccess }: Omit<ModalNovaRemessaProps, 'open'>) {
   const { state, dispatch } = useAppStore()
+  const carimbar = useCarimbo()
   const vendedoras = state.vendedoras.filter((v) => v.ativa)
 
   // Só variações com estoque no central podem sair
   const opcoes = useMemo<Opcao[]>(
     () =>
-      state.produtos.flatMap((produto) =>
-        produto.variacoes
-          .filter((variacao) => variacao.quantidadeCentral > 0)
-          .map((variacao) => ({
-            chave: `${produto.id}|${variacao.tamanho}|${variacao.cor}`,
-            produtoId: produto.id,
-            tamanho: variacao.tamanho,
-            cor: variacao.cor,
-            disponivel: variacao.quantidadeCentral,
-            preco: produto.preco,
-            label: `${produto.nome} · ${variacao.tamanho} · ${variacao.cor} (${variacao.quantidadeCentral})`,
-          })),
-      ),
+      state.produtos
+        .filter((produto) => !produto.inativo)
+        .flatMap((produto) =>
+          produto.variacoes
+            .filter((variacao) => variacao.quantidadeCentral > 0)
+            .map((variacao) => ({
+              chave: `${produto.id}|${variacao.tamanho}|${variacao.cor}`,
+              produtoId: produto.id,
+              tamanho: variacao.tamanho,
+              cor: variacao.cor,
+              disponivel: variacao.quantidadeCentral,
+              preco: produto.preco,
+              label: `${produto.nome} · ${variacao.tamanho} · ${variacao.cor} (${variacao.quantidadeCentral})`,
+            })),
+        ),
     [state.produtos],
   )
 
@@ -131,6 +135,7 @@ function RemessaForm({ vendedoraInicialId, onClose, onSuccess }: Omit<ModalNovaR
             return o ? [{ produtoId: o.produtoId, tamanho: o.tamanho, cor: o.cor, quantidade: linha.quantidade }] : []
           }),
         },
+        carimbo: carimbar(),
       })
       const nome = state.vendedoras.find((v) => v.id === vendedoraId)?.nome ?? 'vendedora'
       onSuccess(`Remessa ${id} criada · ${formatPecas(totalPecas)} com ${nome}`)
@@ -200,7 +205,7 @@ function RemessaForm({ vendedoraInicialId, onClose, onSuccess }: Omit<ModalNovaR
                   value={linha.quantidade}
                   onChange={(event) => atualizar(linha.key, { quantidade: Math.max(Number.parseInt(event.target.value, 10) || 0, 0) })}
                   onFocus={(event) => event.target.select()}
-                  className={`${fieldClasses()} ${NUMBER_RESET} w-18 shrink-0 text-right tabular-nums`}
+                  className={`${fieldClasses()} ${NUMBER_RESET} w-18! shrink-0 text-right tabular-nums`}
                 />
                 <button
                   type="button"
