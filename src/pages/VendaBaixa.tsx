@@ -109,7 +109,7 @@ export default function VendaBaixa() {
       {pecasSelecionadas > 0 && <div aria-hidden className="h-16" />}
 
       {/* Barra que surge e cresce com a seleção (inspirada no "Dynamic island" do Skiper UI) */}
-      <div className="pointer-events-none fixed inset-x-4 bottom-6 z-40 flex justify-center lg:left-[calc(var(--spacing-rail)+1rem)]">
+      <div className="pointer-events-none fixed inset-x-4 bottom-6 z-30 flex justify-center lg:left-[calc(var(--spacing-rail)+1rem)]">
         <AnimatePresence>
           {pecasSelecionadas > 0 && (
             <motion.div

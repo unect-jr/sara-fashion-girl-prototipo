@@ -58,7 +58,7 @@ export default function SeletorPecas({ pecas, quantidades, onChange, rotuloSaldo
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                   <p className="truncate text-sub font-medium text-ink">{peca.produto.nome}</p>
-                  <p className="flex items-center gap-1.5 truncate text-caption text-muted tabular-nums">
+                  <p className="flex flex-wrap items-center gap-x-1.5 text-caption text-muted tabular-nums">
                     <AmostraCor cor={peca.cor} tamanho="sm" />
                     {peca.tamanho} · {peca.cor} · {peca.quantidade} {rotuloSaldo} · {formatCurrency(peca.produto.preco)}
                   </p>
