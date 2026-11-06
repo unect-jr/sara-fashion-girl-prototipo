@@ -1,6 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router'
+import { useLocation, useNavigate } from 'react-router'
 import EstoqueFiltros, { type FiltrosEstoque } from '../components/estoque/EstoqueFiltros'
 import ModalEntradaMercadoria from '../components/estoque/ModalEntradaMercadoria'
 import ModalNovoProduto from '../components/estoque/ModalNovoProduto'
@@ -36,10 +36,15 @@ function plural(quantidade: number, singular: string, varios: string): string {
 export default function Estoque() {
   const { state } = useAppStore()
   const navigate = useNavigate()
+  const location = useLocation()
   const [filtros, setFiltros] = useState(FILTROS_INICIAIS)
   const [mostrarTodos, setMostrarTodos] = useState(false)
   const [modal, setModal] = useState<ModalAberto>(null)
-  const [toast, setToast] = useState<ToastMessage | null>(null)
+  // Aviso vindo do detalhe (ex.: produto excluído)
+  const [toast, setToast] = useState<ToastMessage | null>(() => {
+    const aviso = (location.state as { aviso?: string } | null)?.aviso
+    return aviso ? { id: 1, text: aviso } : null
+  })
   const [carregando, setCarregando] = useState(true)
 
   // Carregamento simulado na entrada da tela

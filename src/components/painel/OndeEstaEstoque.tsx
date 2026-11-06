@@ -4,6 +4,7 @@ import { parseISODate } from '../../lib/date'
 import { formatCurrency, formatPecas } from '../../lib/format'
 import { EASE_OUT } from '../../lib/motion'
 import { custoCentral, pecasCentral, pecasNaRua, saldoCrediario, saldoEmAtraso, valorNaRua, vendidoNoMes } from '../../store/selectors'
+import { vendasDoDia } from '../../store/consultas'
 import { useAppStore } from '../../store/useAppStore'
 import AnimatedNumber from '../ui/AnimatedNumber'
 import Card from '../ui/Card'
@@ -45,6 +46,7 @@ export default function OndeEstaEstoque() {
       custo: custoCentral(state.produtos),
       consignado: valorNaRua(state),
       vendido,
+      hoje: vendasDoDia(state),
       aReceber: saldoCrediario(state.crediarios),
       emAtraso: saldoEmAtraso(state.crediarios, state.hoje),
     }
@@ -99,6 +101,13 @@ export default function OndeEstaEstoque() {
         <div aria-hidden className="h-px w-full bg-line" />
 
         <div className="flex flex-col gap-4 pt-1.5 sm:flex-row sm:items-center sm:gap-5">
+          {/* Vendas do dia, registradas pelas vendedoras na hora (HU 5.1) */}
+          <Medida
+            rotulo="Vendido hoje"
+            valor={<AnimatedNumber value={dados.hoje.valor} format={formatCurrency} />}
+            detalhe={`${formatPecas(dados.hoje.pecas)} em ${dados.hoje.vendas} ${dados.hoje.vendas === 1 ? 'venda' : 'vendas'}`}
+          />
+          <div aria-hidden className="hidden h-11.5 w-px shrink-0 bg-line sm:block" />
           <Medida
             rotulo={`Vendido em ${mesLongo.format(parseISODate(state.hoje))}`}
             valor={<AnimatedNumber value={dados.vendido.pecas} format={formatPecas} />}

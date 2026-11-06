@@ -42,6 +42,8 @@ export const CORES_AMOSTRA: Record<string, string> = {
   Mescla: '#a9a9a4',
   'Jeans claro': '#7f9fc4',
   'Jeans escuro': '#2f4a6e',
+  Floral: '#f0c9cf',
+  Estampado: '#c9a27e',
 }
 
 // Fornecedores mock do modal Entrada de mercadoria

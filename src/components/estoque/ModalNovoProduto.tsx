@@ -1,13 +1,16 @@
 import { AnimatePresence, motion } from 'motion/react'
-import { useState, type FormEvent, type KeyboardEvent } from 'react'
+import { useState, type ChangeEvent, type FormEvent, type KeyboardEvent } from 'react'
 import mais from '../../assets/icons/mais.svg'
+import { useCarimbo } from '../../auth/useCarimbo'
 import { CATEGORIA_LABEL, CATEGORIAS, CORES_AMOSTRA, TAMANHOS_GRADE } from '../../data/catalogo'
 import type { Categoria, Produto } from '../../data/types'
 import { formatCurrency, formatPecas } from '../../lib/format'
 import { gradeVazia, parseMoeda, totalGrade, type Grade } from '../../lib/grade'
+import { reduzirImagem } from '../../lib/imagem'
 import { EASE_OUT } from '../../lib/motion'
-import { proximoIdProduto, proximoSku } from '../../store/selectors'
+import { getProduto, proximoIdProduto, proximoSku } from '../../store/selectors'
 import { useAppStore } from '../../store/useAppStore'
+import AmostraCor from '../ui/AmostraCor'
 import Button from '../ui/Button'
 import Field from '../ui/Field'
 import { fieldClasses, fieldErrorId } from '../ui/fieldStyles'
@@ -18,6 +21,8 @@ import GradeInputs from './GradeInputs'
 
 interface ModalNovoProdutoProps {
   open: boolean
+  // Com produto: modo edição (HU 2.2)
+  produtoId?: string
   onClose: () => void
   onSuccess: (mensagem: string) => void
 }
@@ -27,14 +32,21 @@ interface Erros {
   custo?: string
   preco?: string
   cores?: string
+  imagem?: string
 }
 
 const LATENCIA_MS = 600
+const TAMANHO_MAXIMO_MB = 8
 
-export default function ModalNovoProduto({ open, onClose, onSuccess }: ModalNovoProdutoProps) {
+export default function ModalNovoProduto({ open, produtoId, onClose, onSuccess }: ModalNovoProdutoProps) {
   return (
-    <Modal open={open} onClose={onClose} title="Novo produto" subtitle="O SKU é gerado quando você salvar">
-      <NovoProdutoForm onClose={onClose} onSuccess={onSuccess} />
+    <Modal
+      open={open}
+      onClose={onClose}
+      title={produtoId ? 'Editar produto' : 'Novo produto'}
+      subtitle={produtoId ? 'O SKU continua o mesmo' : 'O SKU é gerado quando você salvar'}
+    >
+      <ProdutoForm produtoId={produtoId} onClose={onClose} onSuccess={onSuccess} />
     </Modal>
   )
 }
@@ -45,24 +57,33 @@ function formatarAoSair(texto: string): string {
   return valor > 0 ? formatCurrency(valor) : texto
 }
 
-function NovoProdutoForm({ onClose, onSuccess }: Omit<ModalNovoProdutoProps, 'open'>) {
+function ProdutoForm({ produtoId, onClose, onSuccess }: Omit<ModalNovoProdutoProps, 'open'>) {
   const { state, dispatch } = useAppStore()
-  const [nome, setNome] = useState('')
-  const [categoria, setCategoria] = useState<Categoria>('blusa')
-  const [custo, setCusto] = useState('')
-  const [preco, setPreco] = useState('')
-  const [grade, setGrade] = useState<Grade>(gradeVazia)
+  const carimbar = useCarimbo()
+  const existente = produtoId ? getProduto(state.produtos, produtoId) : undefined
+  const coresExistentes = existente ? [...new Set(existente.variacoes.map((variacao) => variacao.cor))] : []
+
+  const [nome, setNome] = useState(existente?.nome ?? '')
+  const [categoria, setCategoria] = useState<Categoria>(existente?.categoria ?? 'blusa')
+  const [custo, setCusto] = useState(existente ? formatCurrency(existente.custo) : '')
+  const [preco, setPreco] = useState(existente ? formatCurrency(existente.preco) : '')
+  const [imagem, setImagem] = useState(existente?.imagem)
+  // Cores novas; no cadastro cada uma tem a sua grade (saldo por cor e tamanho)
   const [cores, setCores] = useState<string[]>([])
+  const [grades, setGrades] = useState<Record<string, Grade>>({})
   const [novaCor, setNovaCor] = useState<string | null>(null)
   const [erros, setErros] = useState<Erros>({})
+  const [lendoImagem, setLendoImagem] = useState(false)
   const [salvando, setSalvando] = useState(false)
 
-  const pecas = totalGrade(grade)
+  const pecas = cores.reduce((total, cor) => total + totalGrade(grades[cor] ?? gradeVazia()), 0)
 
   function confirmarCor() {
     const cor = novaCor?.trim()
-    if (cor && !cores.some((existente) => existente.toLowerCase() === cor.toLowerCase())) {
+    const repetida = [...coresExistentes, ...cores].some((atual) => atual.toLowerCase() === cor?.toLowerCase())
+    if (cor && !repetida) {
       setCores((atual) => [...atual, cor])
+      setGrades((atual) => ({ ...atual, [cor]: gradeVazia() }))
       setErros((atual) => ({ ...atual, cores: undefined }))
     }
     setNovaCor(null)
@@ -80,45 +101,73 @@ function NovoProdutoForm({ onClose, onSuccess }: Omit<ModalNovoProdutoProps, 'op
     }
   }
 
+  async function escolherImagem(event: ChangeEvent<HTMLInputElement>) {
+    const arquivo = event.target.files?.[0]
+    event.target.value = ''
+    if (!arquivo) return
+    if (!arquivo.type.startsWith('image/')) {
+      setErros((atual) => ({ ...atual, imagem: 'Escolha um arquivo de imagem (JPG, PNG ou WEBP)' }))
+      return
+    }
+    if (arquivo.size > TAMANHO_MAXIMO_MB * 1024 * 1024) {
+      setErros((atual) => ({ ...atual, imagem: `A foto pode ter até ${TAMANHO_MAXIMO_MB} MB` }))
+      return
+    }
+    setLendoImagem(true)
+    try {
+      setImagem(await reduzirImagem(arquivo))
+      setErros((atual) => ({ ...atual, imagem: undefined }))
+    } catch {
+      setErros((atual) => ({ ...atual, imagem: 'Não foi possível abrir essa foto. Tente outra.' }))
+    } finally {
+      setLendoImagem(false)
+    }
+  }
+
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (salvando) return
+    if (salvando || lendoImagem) return
 
     const valorCusto = parseMoeda(custo)
     const valorPreco = parseMoeda(preco)
     const novosErros: Erros = {
       nome: nome.trim() ? undefined : 'Informe o nome do modelo',
       custo: valorCusto > 0 ? undefined : 'Informe o preço de custo',
-      preco:
-        valorPreco <= 0 ? 'Informe o preço de venda' : valorPreco <= valorCusto ? 'Precisa ser maior que o custo' : undefined,
-      cores: cores.length > 0 ? undefined : 'Adicione ao menos uma cor',
+      preco: valorPreco <= 0 ? 'Informe o preço de venda' : valorPreco <= valorCusto ? 'Precisa ser maior que o custo' : undefined,
+      cores: existente || cores.length > 0 ? undefined : 'Adicione ao menos uma cor',
     }
     setErros(novosErros)
     if (Object.values(novosErros).some(Boolean)) return
 
     setSalvando(true)
     window.setTimeout(() => {
-      const sku = proximoSku(state.produtos, categoria)
-      // A grade inicial vai para a primeira cor; as demais entram zeradas
-      const produto: Produto = {
-        id: proximoIdProduto(state.produtos),
-        sku,
-        nome: nome.trim(),
-        categoria,
-        preco: valorPreco,
-        custo: valorCusto,
-        variacoes: cores.flatMap((cor, index) =>
-          TAMANHOS_GRADE.map((tamanho) => ({ tamanho, cor, quantidadeCentral: index === 0 ? grade[tamanho] : 0 })),
-        ),
+      if (existente) {
+        dispatch({
+          type: 'editarProduto',
+          produtoId: existente.id,
+          dados: { nome: nome.trim(), categoria, custo: valorCusto, preco: valorPreco, imagem, coresNovas: cores },
+        })
+        onSuccess(`${nome.trim()} atualizado`)
+      } else {
+        const sku = proximoSku(state.produtos, categoria)
+        const produto: Produto = {
+          id: proximoIdProduto(state.produtos),
+          sku,
+          nome: nome.trim(),
+          categoria,
+          preco: valorPreco,
+          custo: valorCusto,
+          imagem,
+          variacoes: cores.flatMap((cor) => TAMANHOS_GRADE.map((tamanho) => ({ tamanho, cor, quantidadeCentral: grades[cor]?.[tamanho] ?? 0 }))),
+        }
+        dispatch({ type: 'novoProduto', produto, carimbo: carimbar() })
+        onSuccess(`${produto.nome} cadastrado · SKU ${sku}`)
       }
-      dispatch({ type: 'novoProduto', produto })
-      onSuccess(`${produto.nome} cadastrado · SKU ${sku}`)
       onClose()
     }, LATENCIA_MS)
   }
 
-  const erroProps = (campo: keyof Erros, id: string) =>
-    erros[campo] ? { 'aria-invalid': true, 'aria-describedby': fieldErrorId(id) } : {}
+  const erroProps = (campo: keyof Erros, id: string) => (erros[campo] ? { 'aria-invalid': true, 'aria-describedby': fieldErrorId(id) } : {})
 
   return (
     <form noValidate onSubmit={onSubmit} className="flex min-h-0 flex-1 flex-col">
@@ -150,7 +199,7 @@ function NovoProdutoForm({ onClose, onSuccess }: Omit<ModalNovoProdutoProps, 'op
               id="produto-sku"
               readOnly
               tabIndex={-1}
-              value=""
+              value={existente?.sku ?? ''}
               placeholder="gerado ao salvar"
               className={`${fieldClasses()} bg-surface-muted`}
             />
@@ -184,39 +233,90 @@ function NovoProdutoForm({ onClose, onSuccess }: Omit<ModalNovoProdutoProps, 'op
           </Field>
         </div>
 
+        {/* Foto do produto (HU 2.1) */}
+        <div className="flex flex-col gap-1.5">
+          <p className="font-label text-label font-semibold text-muted uppercase">Foto</p>
+          <div className="flex items-center gap-3.5 rounded-tile border border-dashed border-line-strong p-2.5">
+            <div className="flex size-18 shrink-0 items-center justify-center overflow-hidden rounded-[10px] bg-surface-muted">
+              {imagem ? (
+                <img src={imagem} alt="Foto do produto" className="size-full object-cover" />
+              ) : (
+                <span aria-hidden className="text-metric font-semibold text-track">
+                  {nome.trim().charAt(0).toUpperCase() || '?'}
+                </span>
+              )}
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-2">
+              <p className="text-caption text-muted">{lendoImagem ? 'Preparando a foto…' : 'JPG, PNG ou WEBP de até 8 MB. A foto aparece no card do estoque.'}</p>
+              <div className="flex flex-wrap gap-2">
+                <label className="cursor-pointer rounded-full border border-line-strong bg-surface px-3.5 py-1.5 text-button leading-4 font-semibold text-ink-soft transition-colors focus-within:outline-2 focus-within:outline-brand hover:border-muted">
+                  {imagem ? 'Trocar foto' : 'Escolher foto'}
+                  <input type="file" accept="image/*" className="sr-only" onChange={escolherImagem} />
+                </label>
+                {imagem && (
+                  <Button size="xs" onClick={() => setImagem(undefined)}>
+                    Remover
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+          {erros.imagem && <p className="px-3.5 text-caption text-brand">{erros.imagem}</p>}
+        </div>
+
         <div aria-hidden className="h-px w-full shrink-0 bg-line" />
-        <p className="font-label text-label font-semibold text-muted uppercase">Grade inicial no central</p>
-        <GradeInputs idPrefix="produto-grade" value={grade} onChange={setGrade} />
-
         <p id="produto-cores" className="font-label text-label font-semibold text-muted uppercase">
-          Cores
+          {existente ? 'Cores' : 'Cores e grade inicial no central'}
         </p>
-        <div role="group" aria-labelledby="produto-cores" className="flex flex-wrap items-center gap-2">
-          <AnimatePresence initial={false}>
-            {cores.map((cor) => (
-              <motion.button
-                key={cor}
-                type="button"
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                transition={{ duration: 0.18, ease: EASE_OUT }}
-                onClick={() => setCores((atual) => atual.filter((item) => item !== cor))}
-                aria-label={`Remover cor ${cor}`}
-                title="Remover cor"
-                className="flex items-center gap-2 rounded-full border border-line bg-surface-muted py-1.75 pr-3.25 pl-2.75 text-button-sm leading-3.75 font-medium text-ink-soft transition-colors hover:border-brand hover:text-brand focus-visible:outline-2 focus-visible:outline-brand"
-              >
-                <span
-                  aria-hidden
-                  className="size-3 rounded-full border border-line-strong"
-                  style={{ backgroundColor: CORES_AMOSTRA[cor] ?? 'var(--color-line)' }}
-                />
-                {cor}
-              </motion.button>
-            ))}
-          </AnimatePresence>
 
+        {existente && (
+          <div className="flex flex-wrap gap-2">
+            {coresExistentes.map((cor) => (
+              <span key={cor} className="flex items-center gap-2 rounded-full border border-line bg-surface-muted py-1.75 pr-3.25 pl-2.75 text-button-sm leading-3.75 font-medium text-ink-soft">
+                <AmostraCor cor={cor} />
+                {cor}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <AnimatePresence initial={false}>
+          {cores.map((cor) => (
+            <motion.div
+              key={cor}
+              layout
+              initial={{ opacity: 0, y: -6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.2, ease: EASE_OUT }}
+              className="flex shrink-0 flex-col gap-2.5 rounded-tile border border-line bg-surface-muted p-3"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <span className="flex items-center gap-2 text-sub font-medium text-ink">
+                  <AmostraCor cor={cor} />
+                  {cor}
+                  {existente && <span className="text-caption font-normal text-muted">nova, entra zerada</span>}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setCores((atual) => atual.filter((item) => item !== cor))}
+                  className="rounded-full px-2.5 py-1 text-caption font-medium text-muted transition-colors hover:bg-line hover:text-brand focus-visible:outline-2 focus-visible:outline-brand"
+                >
+                  Remover cor
+                </button>
+              </div>
+              {!existente && (
+                <GradeInputs
+                  idPrefix={`produto-grade-${cor.replace(/\W+/g, '-')}`}
+                  value={grades[cor] ?? gradeVazia()}
+                  onChange={(grade) => setGrades((atual) => ({ ...atual, [cor]: grade }))}
+                />
+              )}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
+        <div role="group" aria-labelledby="produto-cores" className="flex flex-wrap items-center gap-2">
           {novaCor !== null ? (
             <input
               autoFocus
@@ -243,7 +343,7 @@ function NovoProdutoForm({ onClose, onSuccess }: Omit<ModalNovoProdutoProps, 'op
           )}
           <datalist id="produto-cores-sugestoes">
             {Object.keys(CORES_AMOSTRA)
-              .filter((cor) => !cores.includes(cor))
+              .filter((cor) => !cores.includes(cor) && !coresExistentes.includes(cor))
               .map((cor) => (
                 <option key={cor} value={cor} />
               ))}
@@ -257,11 +357,15 @@ function NovoProdutoForm({ onClose, onSuccess }: Omit<ModalNovoProdutoProps, 'op
       </div>
 
       <div className={MODAL_FOOTER}>
-        <p className="text-button leading-4 text-muted tabular-nums">{formatPecas(pecas)} na grade inicial</p>
+        <p className="text-button leading-4 text-muted tabular-nums">
+          {existente
+            ? `${coresExistentes.length + cores.length} ${coresExistentes.length + cores.length === 1 ? 'cor' : 'cores'} · SKU ${existente.sku}`
+            : `${formatPecas(pecas)} na grade inicial`}
+        </p>
         <div className="flex gap-2.5">
           <Button onClick={onClose}>Cancelar</Button>
-          <Button type="submit" variant="primary" disabled={salvando}>
-            {salvando ? 'Salvando…' : 'Salvar produto'}
+          <Button type="submit" variant="primary" disabled={salvando || lendoImagem}>
+            {salvando ? 'Salvando…' : existente ? 'Salvar alterações' : 'Salvar produto'}
           </Button>
         </div>
       </div>

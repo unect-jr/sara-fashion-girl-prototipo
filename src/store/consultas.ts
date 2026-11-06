@@ -127,7 +127,7 @@ export function temMovimentacao(state: AppState, produtoId: string): boolean {
 }
 
 export function ordenarMovimentacoes(lista: Movimentacao[]): Movimentacao[] {
-  return lista.toSorted((a, b) => `${b.data} ${b.hora} ${b.id}`.localeCompare(`${a.data} ${a.hora} ${a.id}`))
+  return lista.toSorted((a, b) => `${b.data} ${b.id}`.localeCompare(`${a.data} ${a.id}`))
 }
 
 export function historicoProduto(state: AppState, produtoId: string): Movimentacao[] {

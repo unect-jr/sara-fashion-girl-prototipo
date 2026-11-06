@@ -35,9 +35,9 @@ const MANUAIS: VendaManual[] = [
   },
   // Lançada pela Tati no lugar da Sueli
   { dias: -1, hora: '17:45', vendedoraId: 'v5', remessaId: 'RM-0153', lancadoPorId: 'u1', itens: [['p12', 'P', 'Nude', 1]], forma: 'avista' },
-  { dias: 0, hora: '09:50', vendedoraId: 'v5', remessaId: 'RM-0153', itens: [['p08', 'M', 'Branco', 2]], forma: 'pix' },
+  { dias: 0, hora: '08:20', vendedoraId: 'v5', remessaId: 'RM-0153', itens: [['p08', 'M', 'Branco', 2]], forma: 'pix' },
   {
-    dias: 0, hora: '11:15', vendedoraId: 'v2', remessaId: 'RM-0147', itens: [['p16', 'M', 'Jeans claro', 1]],
+    dias: 0, hora: '08:45', vendedoraId: 'v2', remessaId: 'RM-0147', itens: [['p16', 'M', 'Jeans claro', 1]],
     forma: 'parcelado', parcelas: 3, cliente: 'Juliana Prado', vencimento: 30,
   },
 ]
