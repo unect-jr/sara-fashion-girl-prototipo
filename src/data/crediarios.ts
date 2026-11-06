@@ -1,17 +1,6 @@
 import { addDays, type ISODate } from '../lib/date'
-import { roundCents } from '../lib/remessa'
-import type { Crediario, Parcela } from './types'
-
-// Parcelas mensais (30 dias); a diferença de centavos fica na última
-function parcelas(valorTotal: number, quantidade: number, primeiroVencimento: ISODate, pagas: number): Parcela[] {
-  const valor = roundCents(valorTotal / quantidade)
-  return Array.from({ length: quantidade }, (_, index) => ({
-    numero: index + 1,
-    valor: index === quantidade - 1 ? roundCents(valorTotal - valor * (quantidade - 1)) : valor,
-    vencimento: addDays(primeiroVencimento, index * 30),
-    paga: index < pagas,
-  }))
-}
+import { gerarParcelas } from '../lib/crediario'
+import type { Crediario } from './types'
 
 function crediario(id: string, cliente: string, vendedoraId: string, dataVenda: ISODate, valorTotal: number, quantidade: number, pagas: number): Crediario {
   return {
@@ -20,11 +9,12 @@ function crediario(id: string, cliente: string, vendedoraId: string, dataVenda: 
     vendedoraId,
     dataVenda,
     valorTotal,
-    parcelas: parcelas(valorTotal, quantidade, addDays(dataVenda, 30), pagas),
+    forma: 'parcelado',
+    parcelas: gerarParcelas(valorTotal, quantidade, addDays(dataVenda, 30), pagas),
   }
 }
 
-// Cobrem parcela vencida há mais de 15 dias, parcela que vence hoje e parcelas futuras
+// Vendas anteriores ao sistema: cobrem parcela vencida há mais de 15 dias, que vence hoje e futuras
 export function crediariosSeed(hoje: ISODate): Crediario[] {
   const dia = (offset: number) => addDays(hoje, offset)
 

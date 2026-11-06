@@ -29,3 +29,9 @@ export function addDays(iso: ISODate, days: number): ISODate {
 export function diffDays(a: ISODate, b: ISODate): number {
   return Math.round((parseISODate(a).getTime() - parseISODate(b).getTime()) / MS_PER_DAY)
 }
+
+// 14:05 (hora local); chame só em eventos, nunca durante o render
+export function horaAtual(): string {
+  const agora = new Date()
+  return `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}`
+}

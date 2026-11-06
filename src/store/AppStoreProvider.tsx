@@ -5,8 +5,8 @@ import { todayISO } from '../lib/date'
 import { AppStoreContext } from './context'
 import { appReducer } from './reducer'
 
-// v2: produtos ganharam sku e imagem; estado salvo da v1 é descartado
-const STORAGE_KEY = 'sfg-prototipo:v2'
+// v3: usuários, vendas, movimentações e lembretes; estado salvo das versões anteriores é descartado
+const STORAGE_KEY = 'sfg-prototipo:v3'
 
 // Reaproveita o estado salvo só se for do mesmo dia; em outro dia o seed é refeito
 // para os status por prazo continuarem cobrindo atrasado / vence hoje / em dia

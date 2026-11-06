@@ -4,8 +4,9 @@ import type { ItemRemessa, Remessa, Tamanho } from './types'
 
 const PRAZO_PADRAO_DIAS = 30
 
-function item(produtoId: string, tamanho: Tamanho, cor: string, enviada: number, devolvida = 0, vendida = 0): ItemRemessa {
-  return { produtoId, tamanho, cor, enviada, devolvida, vendida }
+// baixada: vendida pela vendedora e ainda não acertada (bate com as vendas de vendas.ts)
+function item(produtoId: string, tamanho: Tamanho, cor: string, enviada: number, devolvida = 0, vendida = 0, baixada = 0): ItemRemessa {
+  return { produtoId, tamanho, cor, enviada, devolvida, vendida, baixada }
 }
 
 function remessa(id: string, vendedoraId: string, dataSaida: ISODate, itens: ItemRemessa[]): Remessa {
@@ -51,7 +52,8 @@ export function remessasSeed(hoje: ISODate): Remessa[] {
       item('p26', 'P', 'Off-white', 2, 0, 2),
     ]),
 
-    // Abertas: na rua (as do Painel no Figma)
+    // Abertas: na rua (as do Painel no Figma). As vendas já baixadas somam em enviada e baixada
+    // ao mesmo tempo, então as peças com cada vendedora continuam iguais às do Figma
     remessa('RM-0142', 'v1', dia(-37), [
       item('p01', 'M', 'Floral', 3),
       item('p01', 'G', 'Floral', 3),
@@ -63,10 +65,10 @@ export function remessasSeed(hoje: ISODate): Remessa[] {
       item('p14', 'M', 'Branco', 8),
     ]),
     remessa('RM-0147', 'v2', dia(-30), [
-      item('p02', 'M', 'Preto', 4),
+      item('p02', 'M', 'Preto', 5, 0, 0, 1),
       item('p05', 'M', 'Estampado', 3),
       item('p16', 'G', 'Jeans claro', 4),
-      item('p16', 'M', 'Jeans claro', 3),
+      item('p16', 'M', 'Jeans claro', 4, 0, 0, 1),
       item('p21', 'M', 'Jeans claro', 4),
       item('p25', 'M', 'Bege', 4),
     ]),
@@ -77,20 +79,21 @@ export function remessasSeed(hoje: ISODate): Remessa[] {
       item('p09', 'M', 'Branco', 4, 1, 1),
       item('p14', 'G', 'Preto', 8),
       item('p18', 'M', 'Mescla', 5),
-      item('p24', 'P', 'Areia', 6),
+      item('p24', 'P', 'Areia', 7, 0, 0, 1),
     ]),
     remessa('RM-0151', 'v4', dia(-16), [
       item('p03', 'M', 'Areia', 3),
       item('p26', 'M', 'Off-white', 4),
       item('p17', 'M', 'Cáqui', 3),
-      item('p20', 'P', 'Preto', 3),
-      item('p06', 'M', 'Branco', 4),
+      item('p20', 'P', 'Preto', 4, 0, 0, 1),
+      item('p06', 'M', 'Branco', 5, 0, 0, 1),
     ]),
     remessa('RM-0153', 'v5', dia(-13), [
       item('p01', 'P', 'Floral', 2),
       item('p02', 'P', 'Caramelo', 4),
       item('p08', 'G', 'Branco', 5),
-      item('p12', 'P', 'Nude', 5),
+      item('p12', 'P', 'Nude', 6, 0, 0, 1),
+      item('p08', 'M', 'Branco', 2, 0, 0, 2),
       item('p14', 'P', 'Branco', 10),
       item('p15', 'G', 'Bege', 4),
       item('p16', 'P', 'Jeans claro', 2),
