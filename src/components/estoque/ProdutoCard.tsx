@@ -6,6 +6,7 @@ import { CATEGORIA_LABEL, TAMANHOS_GRADE } from '../../data/catalogo'
 import { formatCurrency, formatNumber } from '../../lib/format'
 import { EASE_OUT } from '../../lib/motion'
 import type { ResumoProduto } from '../../store/selectors'
+import AmostraCor from '../ui/AmostraCor'
 import Tag from '../ui/Tag'
 
 interface ProdutoCardProps {
@@ -18,6 +19,7 @@ const BARRA = { duration: 0.4, ease: EASE_OUT }
 // Card de produto (Figma 19:2 e variantes): onde estão as peças, grade do central e giro
 export default function ProdutoCard({ resumo, onSelect }: ProdutoCardProps) {
   const { produto, central, naRua, porTamanho, vendidas30d, etiqueta } = resumo
+  const cores = [...new Set(produto.variacoes.map((variacao) => variacao.cor))]
 
   return (
     <motion.button
@@ -41,13 +43,27 @@ export default function ProdutoCard({ resumo, onSelect }: ProdutoCardProps) {
       <span className="flex w-full flex-col gap-3.5 px-5 py-4.5">
         <span className="flex items-center justify-between gap-2">
           <Tag>{CATEGORIA_LABEL[produto.categoria]}</Tag>
-          {etiqueta === 'repor' && <Tag variant="warning">REPOR</Tag>}
-          {etiqueta === 'tudo-na-rua' && <Tag variant="info">TUDO NA RUA</Tag>}
+          {produto.inativo ? (
+            <Tag variant="muted">INATIVO</Tag>
+          ) : (
+            <>
+              {etiqueta === 'repor' && <Tag variant="warning">REPOR</Tag>}
+              {etiqueta === 'tudo-na-rua' && <Tag variant="info">TUDO NA RUA</Tag>}
+            </>
+          )}
         </span>
 
         <span className="flex min-w-0 flex-col gap-0.75">
           <span className="truncate text-heading font-semibold text-ink">{produto.nome}</span>
-          <span className="text-caption leading-3.5 tracking-[0.04em] text-muted">{produto.sku}</span>
+          <span className="flex items-center gap-2">
+            <span className="text-caption leading-3.5 tracking-[0.04em] text-muted">{produto.sku}</span>
+            {/* Cores do modelo: o saldo é por cor e tamanho (detalhe no produto) */}
+            <span className="flex items-center gap-1" aria-label={`Cores: ${cores.join(', ')}`}>
+              {cores.map((cor) => (
+                <AmostraCor key={cor} cor={cor} tamanho="sm" />
+              ))}
+            </span>
+          </span>
         </span>
 
         {/* Faixa: central (grafite) e na rua (azul-marinho), proporcionais */}
@@ -109,7 +125,7 @@ export default function ProdutoCard({ resumo, onSelect }: ProdutoCardProps) {
           </span>
         </span>
       </span>
-      <span className="sr-only">Dar entrada de mercadoria</span>
+      <span className="sr-only">Ver detalhes do produto</span>
     </motion.button>
   )
 }

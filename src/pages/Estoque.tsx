@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router'
 import EstoqueFiltros, { type FiltrosEstoque } from '../components/estoque/EstoqueFiltros'
 import ModalEntradaMercadoria from '../components/estoque/ModalEntradaMercadoria'
 import ModalNovoProduto from '../components/estoque/ModalNovoProduto'
@@ -12,12 +13,13 @@ import EmptyState from '../components/ui/EmptyState'
 import Toast, { type ToastMessage } from '../components/ui/Toast'
 import { formatNumber } from '../lib/format'
 import { EASE_OUT } from '../lib/motion'
+import { coresDoEstoque } from '../store/consultas'
 import { pecasCentral, pecasNaRua, resumoEstoque } from '../store/selectors'
 import { useAppStore } from '../store/useAppStore'
 
 type ModalAberto = { tipo: 'entrada'; produtoId?: string } | { tipo: 'novo' } | null
 
-const FILTROS_INICIAIS: FiltrosEstoque = { busca: '', categoria: '', tamanho: '', somenteBaixo: false }
+const FILTROS_INICIAIS: FiltrosEstoque = { busca: '', categoria: '', tamanho: '', cor: '', somenteBaixo: false, inativos: false }
 // Duas fileiras de três, como no Figma; "Ver todos os modelos" abre o resto
 const POR_PAGINA = 6
 const CARREGAMENTO_MS = 450
@@ -33,6 +35,7 @@ function plural(quantidade: number, singular: string, varios: string): string {
 
 export default function Estoque() {
   const { state } = useAppStore()
+  const navigate = useNavigate()
   const [filtros, setFiltros] = useState(FILTROS_INICIAIS)
   const [mostrarTodos, setMostrarTodos] = useState(false)
   const [modal, setModal] = useState<ModalAberto>(null)
@@ -46,6 +49,8 @@ export default function Estoque() {
   }, [])
 
   const resumo = useMemo(() => resumoEstoque(state), [state])
+  const cores = useMemo(() => coresDoEstoque(state.produtos), [state.produtos])
+  const inativos = state.produtos.filter((produto) => produto.inativo).length
   const central = pecasCentral(state.produtos)
   const naRua = pecasNaRua(state.remessas)
   const paraRepor = resumo.filter((item) => item.etiqueta).length
@@ -54,7 +59,10 @@ export default function Estoque() {
     const busca = normalizar(filtros.busca.trim())
     return resumo.filter(
       ({ produto, porTamanho, estoqueBaixo }) =>
+        // Inativos ficam fora da grade, a menos que o filtro peça para vê-los
+        Boolean(produto.inativo) === filtros.inativos &&
         (!busca || normalizar(produto.nome).includes(busca) || normalizar(produto.sku).includes(busca)) &&
+        (!filtros.cor || produto.variacoes.some((variacao) => variacao.cor === filtros.cor)) &&
         (!filtros.categoria || produto.categoria === filtros.categoria) &&
         (!filtros.tamanho || porTamanho[filtros.tamanho] > 0) &&
         (!filtros.somenteBaixo || estoqueBaixo),
@@ -72,7 +80,7 @@ export default function Estoque() {
     <>
       <PageHeader
         title="Estoque"
-        subtitle={`${plural(central + naRua, 'peça', 'peças')} em ${plural(state.produtos.length, 'modelo', 'modelos')} · ${formatNumber(central)} no central, ${formatNumber(naRua)} na rua`}
+        subtitle={`${plural(central + naRua, 'peça', 'peças')} em ${plural(state.produtos.length - inativos, 'modelo', 'modelos')} · ${formatNumber(central)} no central, ${formatNumber(naRua)} na rua`}
         actions={
           <>
             <Button size="xs" onClick={() => abrir({ tipo: 'novo' })}>
@@ -88,6 +96,7 @@ export default function Estoque() {
       <div className="-mt-1 flex flex-col gap-5">
         <EstoqueFiltros
           filtros={filtros}
+          cores={cores}
           onChange={setFiltros}
           contagem={`${formatNumber(visiveis.length)} de ${plural(filtrados.length, 'modelo', 'modelos')}`}
         />
@@ -118,7 +127,7 @@ export default function Estoque() {
                   exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.15 } }}
                   className="flex"
                 >
-                  <ProdutoCard resumo={item} onSelect={() => abrir({ tipo: 'entrada', produtoId: item.produto.id })} />
+                  <ProdutoCard resumo={item} onSelect={() => navigate(`/estoque/${item.produto.id}`)} />
                 </motion.li>
               ))}
             </AnimatePresence>
